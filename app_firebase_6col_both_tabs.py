@@ -1,6 +1,7 @@
 
 import streamlit as st
 import firebase_admin
+from firebase_admin import firestore
 from firebase_admin import credentials
 
 # Ép firebase config từ secrets thành dict thuần
