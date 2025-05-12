@@ -1,65 +1,115 @@
 
 import streamlit as st
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import firestore
+from firebase_admin import credentials
 
-# Khởi tạo Firebase
+# Ép firebase config từ secrets thành dict thuần
+firebase_config = {key: st.secrets["firebase"][key] for key in st.secrets["firebase"]}
+cred = credentials.Certificate(firebase_config)
+
+# Khởi tạo app Firebase nếu chưa khởi tạo
 if not firebase_admin._apps:
-    cred = credentials.Certificate({key: st.secrets["firebase"][key] for key in st.secrets["firebase"]})
     firebase_admin.initialize_app(cred)
 
+# --- phần còn lại của app (giữ nguyên từ file gốc) ---
+import streamlit as st
+# Thiết lập Firebase
 db = firestore.client()
 
-st.title("📥 Nhập thông tin phụ tùng")
+ADMIN_PASSWORD = "Duy@041100"
+is_admin = False
 
-# Khởi tạo giá trị mặc định cho session_state nếu chưa có
-fields = ["ten_phu_tung", "hang_xe", "ten_xe", "nam_sx", "gia_hang", "gia_garage"]
-for field in fields:
-    if field not in st.session_state:
-        st.session_state[field] = ""
+tab = st.radio("📌 Chọn chức năng", ["📥 Nhập phụ tùng", "📋 Danh sách đã lưu"], horizontal=True)
 
-# Form thủ công với text_input được điều khiển bởi session_state
-st.session_state["ten_phu_tung"] = st.text_input("Tên phụ tùng", value=st.session_state["ten_phu_tung"], key="ten_phu_tung_input")
-st.session_state["hang_xe"] = st.text_input("Hãng xe", value=st.session_state["hang_xe"], key="hang_xe_input")
-st.session_state["ten_xe"] = st.text_input("Tên xe", value=st.session_state["ten_xe"], key="ten_xe_input")
-st.session_state["nam_sx"] = st.text_input("Năm sản xuất", value=st.session_state["nam_sx"], key="nam_sx_input")
-st.session_state["gia_hang"] = st.text_input("Giá hàng (VND)", value=st.session_state["gia_hang"], key="gia_hang_input")
-st.session_state["gia_garage"] = st.text_input("Giá garage (VND)", value=st.session_state["gia_garage"], key="gia_garage_input")
+if tab == "📥 Nhập phụ tùng":
+    st.title("📥 Nhập thông tin phụ tùng")
 
-if st.button("💾 Lưu phụ tùng"):
-    data = {
-        "ten_phu_tung": st.session_state["ten_phu_tung"],
-        "hang_xe": st.session_state["hang_xe"],
-        "ten_xe": st.session_state["ten_xe"],
-        "nam_sx": st.session_state["nam_sx"],
-        "gia_hang": st.session_state["gia_hang"],
-        "gia_garage": st.session_state["gia_garage"]
-    }
+    col1, col2 = st.columns(2)
 
-    db.collection("phutung").add(data)
-    st.success("✅ Đã lưu thông tin phụ tùng!")
+    with col1:
+        ten_phu_tung = st.text_input("Tên phụ tùng")
+        ten_xe = st.text_input("Tên xe")
+        gia_hang = st.text_input("Giá hàng (VNĐ)")
 
-    # Reset từng giá trị session
-    for field in fields:
-        st.session_state[field] = ""
-        st.session_state[field + "_input"] = ""
+    with col2:
+        hang_xe = st.text_input("Hãng xe")
+        nam_sx = st.text_input("Năm sản xuất")
+        gia_garage = st.text_input("Giá garage (VNĐ)")
 
-    st.experimental_rerun()
+    if st.button("📤 Lưu phụ tùng"):
+        if ten_phu_tung and hang_xe and ten_xe:
+            data = {
+                "ten_phu_tung": ten_phu_tung,
+                "hang_xe": hang_xe,
+                "ten_xe": ten_xe,
+                "nam_sx": nam_sx,
+                "gia_hang": gia_hang,
+                "gia_garage": gia_garage
+            }
+            db.collection("phu_tung_data").add(data)
+            st.success("✅ Đã lưu thông tin phụ tùng!")
+        else:
+            st.warning("❗ Vui lòng nhập đầy đủ thông tin!")
 
-# Hiển thị dữ liệu đã lưu
-st.markdown("## 📋 Danh sách đã nhập")
-phu_tung_docs = db.collection("phutung").stream()
+    st.markdown("### 📋 Danh sách đã nhập")
+    header = st.columns(6)
+    for i, label in enumerate(["Tên phụ tùng", "Hãng xe", "Tên xe", "Năm SX", "Giá hàng", "Giá garage"]):
+        header[i].markdown(f"**{label}**")
 
-cols = st.columns(6)
-for i, header in ["Tên phụ tùng", "Hãng xe", "Tên xe", "Năm SX", "Giá hàng", "Giá garage"]:
-    cols[i].markdown(f"**{header}**")
+    docs = db.collection("phu_tung_data").order_by("ten_phu_tung").stream()
+    for doc in docs:
+        item = doc.to_dict()
+        cols = st.columns(6)
+        cols[0].write(item.get("ten_phu_tung", ""))
+        cols[1].write(item.get("hang_xe", ""))
+        cols[2].write(item.get("ten_xe", ""))
+        cols[3].write(item.get("nam_sx", ""))
+        cols[4].write(item.get("gia_hang", ""))
+        cols[5].write(item.get("gia_garage", ""))
 
-for doc in phu_tung_docs:
-    item = doc.to_dict()
-    cols = st.columns(6)
-    cols[0].write(item.get("ten_phu_tung", ""))
-    cols[1].write(item.get("hang_xe", ""))
-    cols[2].write(item.get("ten_xe", ""))
-    cols[3].write(item.get("nam_sx", ""))
-    cols[4].write(item.get("gia_hang", ""))
-    cols[5].write(item.get("gia_garage", ""))
+elif tab == "📋 Danh sách đã lưu":
+    st.title("📋 Danh sách phụ tùng đã lưu")
+
+    with st.expander("🔐 Đăng nhập quản trị viên để xoá"):
+        password = st.text_input("Nhập mật khẩu", type="password")
+        if password == ADMIN_PASSWORD:
+            is_admin = True
+            st.success("✅ Đăng nhập thành công!")
+        elif password:
+            st.error("❌ Mật khẩu sai!")
+
+    st.markdown("### 🔍 Tìm kiếm")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        search_ten = st.text_input("Tên phụ tùng").lower()
+    with c2:
+        search_hang = st.text_input("Hãng xe").lower()
+    with c3:
+        search_xe = st.text_input("Tên xe").lower()
+
+    st.markdown("### 📋 Kết quả tìm kiếm")
+    header = st.columns(6)
+    for i, label in enumerate(["Tên phụ tùng", "Hãng xe", "Tên xe", "Năm SX", "Giá hàng", "Giá garage"]):
+        header[i].markdown(f"**{label}**")
+
+    docs = db.collection("phu_tung_data").stream()
+    for doc in docs:
+        item = doc.to_dict()
+        if (
+            search_ten in item.get("ten_phu_tung", "").lower()
+            and search_hang in item.get("hang_xe", "").lower()
+            and search_xe in item.get("ten_xe", "").lower()
+        ):
+            row = st.columns(6)
+            row[0].write(item.get("ten_phu_tung", ""))
+            row[1].write(item.get("hang_xe", ""))
+            row[2].write(item.get("ten_xe", ""))
+            row[3].write(item.get("nam_sx", ""))
+            row[4].write(item.get("gia_hang", ""))
+            row[5].write(item.get("gia_garage", ""))
+            if is_admin:
+                if st.button(f"🗑️ Xoá", key=doc.id):
+                    db.collection("phu_tung_data").document(doc.id).delete()
+                    st.warning("❌ Đã xoá phụ tùng này.")
+                    st.experimental_rerun()
