@@ -28,14 +28,14 @@ if tab == "📥 Nhập phụ tùng":
     col1, col2 = st.columns(2)
 
     with col1:
-        ten_phu_tung = st.text_input("Tên phụ tùng")
-        ten_xe = st.text_input("Tên xe")
-        gia_hang = st.text_input("Giá hàng (VNĐ)")
+ten_phu_tung = st.text_input("Tên phụ tùng", key="ten_phu_tung")
+ten_xe = st.text_input("Tên xe", key="ten_xe")
+gia_hang = st.text_input("Giá hàng (VND)", key="gia_hang")
 
     with col2:
-        hang_xe = st.text_input("Hãng xe")
-        nam_sx = st.text_input("Năm sản xuất")
-        gia_garage = st.text_input("Giá garage (VNĐ)")
+hang_xe = st.text_input("Hãng xe", key="hang_xe")
+nam_sx = st.text_input("Năm sản xuất", key="nam_sx")
+gia_garage = st.text_input("Giá garage (VND)", key="gia_garage")
 
     if st.button("📤 Lưu phụ tùng"):
         if ten_phu_tung and hang_xe and ten_xe:
@@ -49,10 +49,6 @@ if tab == "📥 Nhập phụ tùng":
             }
             db.collection("phu_tung_data").add(data)
             st.success("✅ Đã lưu thông tin phụ tùng!")
-
-# Reset form sau khi lưu
-for key in ["ten_phu_tung", "hang_xe", "ten_xe", "nam_sx", "gia_hang", "gia_garage"]:
-    st.session_state[key] = ""
         else:
             st.warning("❗ Vui lòng nhập đầy đủ thông tin!")
 
@@ -86,11 +82,11 @@ elif tab == "📋 Danh sách đã lưu":
     st.markdown("### 🔍 Tìm kiếm")
     c1, c2, c3 = st.columns(3)
     with c1:
-        search_ten = st.text_input("Tên phụ tùng").lower()
+ten_phu_tung = st.text_input("Tên phụ tùng", key="ten_phu_tung")
     with c2:
-        search_hang = st.text_input("Hãng xe").lower()
+hang_xe = st.text_input("Hãng xe", key="hang_xe")
     with c3:
-        search_xe = st.text_input("Tên xe").lower()
+ten_xe = st.text_input("Tên xe", key="ten_xe")
 
     st.markdown("### 📋 Kết quả tìm kiếm")
     header = st.columns(6)
