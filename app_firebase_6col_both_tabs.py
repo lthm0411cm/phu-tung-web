@@ -12,36 +12,46 @@ db = firestore.client()
 
 st.title("📥 Nhập thông tin phụ tùng")
 
-# Inputs ngoài st.form
-ten_phu_tung = st.text_input("Tên phụ tùng", key="ten_phu_tung")
-hang_xe = st.text_input("Hãng xe", key="hang_xe")
-ten_xe = st.text_input("Tên xe", key="ten_xe")
-nam_sx = st.text_input("Năm sản xuất", key="nam_sx")
-gia_hang = st.text_input("Giá hàng (VND)", key="gia_hang")
-gia_garage = st.text_input("Giá garage (VND)", key="gia_garage")
+# Khởi tạo giá trị mặc định cho session_state nếu chưa có
+fields = ["ten_phu_tung", "hang_xe", "ten_xe", "nam_sx", "gia_hang", "gia_garage"]
+for field in fields:
+    if field not in st.session_state:
+        st.session_state[field] = ""
+
+# Form thủ công với text_input được điều khiển bởi session_state
+st.session_state["ten_phu_tung"] = st.text_input("Tên phụ tùng", value=st.session_state["ten_phu_tung"], key="ten_phu_tung_input")
+st.session_state["hang_xe"] = st.text_input("Hãng xe", value=st.session_state["hang_xe"], key="hang_xe_input")
+st.session_state["ten_xe"] = st.text_input("Tên xe", value=st.session_state["ten_xe"], key="ten_xe_input")
+st.session_state["nam_sx"] = st.text_input("Năm sản xuất", value=st.session_state["nam_sx"], key="nam_sx_input")
+st.session_state["gia_hang"] = st.text_input("Giá hàng (VND)", value=st.session_state["gia_hang"], key="gia_hang_input")
+st.session_state["gia_garage"] = st.text_input("Giá garage (VND)", value=st.session_state["gia_garage"], key="gia_garage_input")
 
 if st.button("💾 Lưu phụ tùng"):
     data = {
-        "ten_phu_tung": ten_phu_tung,
-        "hang_xe": hang_xe,
-        "ten_xe": ten_xe,
-        "nam_sx": nam_sx,
-        "gia_hang": gia_hang,
-        "gia_garage": gia_garage
+        "ten_phu_tung": st.session_state["ten_phu_tung"],
+        "hang_xe": st.session_state["hang_xe"],
+        "ten_xe": st.session_state["ten_xe"],
+        "nam_sx": st.session_state["nam_sx"],
+        "gia_hang": st.session_state["gia_hang"],
+        "gia_garage": st.session_state["gia_garage"]
     }
+
     db.collection("phutung").add(data)
     st.success("✅ Đã lưu thông tin phụ tùng!")
 
-    for key in ["ten_phu_tung", "hang_xe", "ten_xe", "nam_sx", "gia_hang", "gia_garage"]:
-        del st.session_state[key]
-    st.rerun()
+    # Reset từng giá trị session
+    for field in fields:
+        st.session_state[field] = ""
+        st.session_state[field + "_input"] = ""
+
+    st.experimental_rerun()
 
 # Hiển thị dữ liệu đã lưu
 st.markdown("## 📋 Danh sách đã nhập")
 phu_tung_docs = db.collection("phutung").stream()
 
 cols = st.columns(6)
-for i, header in enumerate(["Tên phụ tùng", "Hãng xe", "Tên xe", "Năm SX", "Giá hàng", "Giá garage"]):
+for i, header in ["Tên phụ tùng", "Hãng xe", "Tên xe", "Năm SX", "Giá hàng", "Giá garage"]:
     cols[i].markdown(f"**{header}**")
 
 for doc in phu_tung_docs:
