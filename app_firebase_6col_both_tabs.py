@@ -1,14 +1,19 @@
+
 import streamlit as st
 import firebase_admin
-from firebase_admin import credentials, firestore
-import pandas as pd
+from firebase_admin import credentials
 
-# Thiết lập Firebase
+# Ép firebase config từ secrets thành dict thuần
+firebase_config = {key: st.secrets["firebase"][key] for key in st.secrets["firebase"]}
+cred = credentials.Certificate(firebase_config)
+
+# Khởi tạo app Firebase nếu chưa khởi tạo
 if not firebase_admin._apps:
-    import json
-    cred = credentials.Certificate(st.secrets["firebase"])
     firebase_admin.initialize_app(cred)
 
+# --- phần còn lại của app (giữ nguyên từ file gốc) ---
+import streamlit as st
+# Thiết lập Firebase
 db = firestore.client()
 
 ADMIN_PASSWORD = "Duy@041100"
