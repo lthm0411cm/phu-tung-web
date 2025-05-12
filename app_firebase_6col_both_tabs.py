@@ -49,6 +49,10 @@ if tab == "📥 Nhập phụ tùng":
             }
             db.collection("phu_tung_data").add(data)
             st.success("✅ Đã lưu thông tin phụ tùng!")
+
+# Reset form sau khi lưu
+for key in ["ten_phu_tung", "hang_xe", "ten_xe", "nam_sx", "gia_hang", "gia_garage"]:
+    st.session_state[key] = ""
         else:
             st.warning("❗ Vui lòng nhập đầy đủ thông tin!")
 
