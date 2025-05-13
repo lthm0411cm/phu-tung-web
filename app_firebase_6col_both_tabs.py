@@ -58,12 +58,42 @@ if tab == "📥 Nhập phụ tùng":
         header[i].markdown(f"**{label}**")
 
     docs = db.collection("phu_tung_data").order_by("ten_phu_tung").stream()
-    
-    # PHÂN TRANG
-    if "page_ds" not in st.session_state:
-        st.session_state.page_ds = 0
+    for doc in docs:
+        item = doc.to_dict()
+        cols = st.columns(6)
+        cols[0].write(item.get("ten_phu_tung", ""))
+        cols[1].write(item.get("hang_xe", ""))
+        cols[2].write(item.get("ten_xe", ""))
+        cols[3].write(item.get("nam_sx", ""))
+        cols[4].write(item.get("gia_hang", ""))
+        cols[5].write(item.get("gia_garage", ""))
 
-    filtered_docs = []
+elif tab == "📋 Danh sách đã lưu":
+    st.title("📋 Danh sách phụ tùng đã lưu")
+
+    with st.expander("🔐 Đăng nhập quản trị viên để xoá"):
+        password = st.text_input("Nhập mật khẩu", type="password")
+        if password == ADMIN_PASSWORD:
+            is_admin = True
+            st.success("✅ Đăng nhập thành công!")
+        elif password:
+            st.error("❌ Mật khẩu sai!")
+
+    st.markdown("### 🔍 Tìm kiếm")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        search_ten = st.text_input("Tên phụ tùng").lower()
+    with c2:
+        search_hang = st.text_input("Hãng xe").lower()
+    with c3:
+        search_xe = st.text_input("Tên xe").lower()
+
+    st.markdown("### 📋 Kết quả tìm kiếm")
+    header = st.columns(6)
+    for i, label in enumerate(["Tên phụ tùng", "Hãng xe", "Tên xe", "Năm SX", "Giá hàng", "Giá garage"]):
+        header[i].markdown(f"**{label}**")
+
+    docs = db.collection("phu_tung_data").stream()
     for doc in docs:
         item = doc.to_dict()
         if (
@@ -71,36 +101,15 @@ if tab == "📥 Nhập phụ tùng":
             and search_hang in item.get("hang_xe", "").lower()
             and search_xe in item.get("ten_xe", "").lower()
         ):
-            filtered_docs.append((doc.id, item))
-
-    items_per_page = 10
-    total_pages = (len(filtered_docs) - 1) // items_per_page + 1
-    start = st.session_state.page_ds * items_per_page
-    end = start + items_per_page
-    paginated_docs = filtered_docs[start:end]
-
-    for doc_id, item in paginated_docs:
-        row = st.columns(6)
-        row[0].write(item.get("ten_phu_tung", ""))
-        row[1].write(item.get("hang_xe", ""))
-        row[2].write(item.get("ten_xe", ""))
-        row[3].write(item.get("nam_sx", ""))
-        row[4].write(item.get("gia_hang", ""))
-        row[5].write(item.get("gia_garage", ""))
-        if is_admin:
-            if st.button(f"🗑️ Xoá", key=doc_id):
-                db.collection("phu_tung_data").document(doc_id).delete()
-                st.warning("❌ Đã xoá phụ tùng này.")
-                st.experimental_rerun()
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("⬅️ Trang trước") and st.session_state.page_ds > 0:
-            st.session_state.page_ds -= 1
-            st.experimental_rerun()
-    with col3:
-        if st.button("Trang sau ➡️") and st.session_state.page_ds < total_pages - 1:
-            st.session_state.page_ds += 1
-            st.experimental_rerun()
-
-    st.caption(f"Trang {st.session_state.page_ds + 1} / {total_pages}")
+            row = st.columns(6)
+            row[0].write(item.get("ten_phu_tung", ""))
+            row[1].write(item.get("hang_xe", ""))
+            row[2].write(item.get("ten_xe", ""))
+            row[3].write(item.get("nam_sx", ""))
+            row[4].write(item.get("gia_hang", ""))
+            row[5].write(item.get("gia_garage", ""))
+            if is_admin:
+                if st.button(f"🗑️ Xoá", key=doc.id):
+                    db.collection("phu_tung_data").document(doc.id).delete()
+                    st.warning("❌ Đã xoá phụ tùng này.")
+                    st.experimental_rerun()
